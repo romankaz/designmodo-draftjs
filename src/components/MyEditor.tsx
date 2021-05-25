@@ -1,20 +1,11 @@
 import React, {useState, useEffect} from 'react'
-import {ContentState, Editor,EditorState, RichUtils, convertToRaw, convertFromRaw, DraftStyleMap, DefaultDraftBlockRenderMap} from 'draft-js'
+import {Editor,EditorState, convertToRaw, convertFromRaw, ContentBlock} from 'draft-js'
 import styled from "styled-components"
 import { Toolbar } from './Toolbar'
 import createStyles from 'draft-js-custom-styles'
 
-const customStyleMap: DraftStyleMap = {
-  'ALIGNCENTER': {
-    'textAlign': 'center',
-  }, 
-  'HIGHLIGHT': {
-    'backgroundColor': '#faed27',
-  },
 
- };
-
- const getBlockStyle: any = (block:any) => {
+ const getBlockStyle: any = (block:ContentBlock) => {
   switch (block.getType()) {
       case 'left':
           return 'align-left';
@@ -33,16 +24,8 @@ const customStyleMap: DraftStyleMap = {
   }   
 }
 
+const { styles, customStyleFn } = createStyles(['font-size', 'color', 'text-transform', 'font-family'], 'CUSTOM_');
 
-const { styles, customStyleFn, exporter } = createStyles(['font-size', 'color', 'text-transform', 'font-family'], 'CUSTOM_');
-
-const TextAlignCenter = styled.div`
-  text-align: center; 
-`
-
-function myBlockStyleFn() {
-
-}
 
 const EditorContainer = styled.div`
   position: absolute;
@@ -84,70 +67,38 @@ const TextArea = styled.div`
   };
 `
 
-
 export const MyEditor:React.FC = () => {
 
-const [value, setValue] = useState('This is the initial content of the editor...')
-const [editorState, setEditorState] = useState(EditorState.createEmpty())
+  const [editorState, setEditorState] = useState(EditorState.createEmpty())
 
-const editor = React.useRef(null)
+  const editor = React.useRef(null)
 
-const onChange = (evt:any) => {
-  // setValue(evt.target.value)
-  setEditorState(evt)
-}
-
-function focusEditor() {
-  const currentFocus:any = editor.current
-  if(currentFocus) {
-    currentFocus.focus()
+  const onChange = (e:EditorState) => {
+    setEditorState(e)
   }
-}
 
-const mySave = () => {
-  const currentRef:any = editor.current
-  const contentState = editorState.getCurrentContent()
-  const raw = convertToRaw(contentState)
-  console.log(raw)
-  if (currentRef) {
-    localStorage.setItem('myContent', JSON.stringify(raw, null, 2))
+  const focusEditor = () => {
+    const currentFocus:any = editor.current
+    if(currentFocus) {
+      currentFocus.focus()
+    }
   }
-}
+
+  const mySave = () => {
+    const currentRef:any = editor.current
+    const contentState = editorState.getCurrentContent()
+    const raw = convertToRaw(contentState)
+    if (currentRef) {
+      localStorage.setItem('myContent', JSON.stringify(raw, null, 2))
+    }
+  }
 
 const myLoad = () => {
   const myContent:any = localStorage.getItem("myContent");
   if(myContent) {
-    console.log(myContent.value)
     const contentState = convertFromRaw(JSON.parse(myContent))
-    // setEditorState(EditorState.createWithContent(ContentState.createFromText(myContent)))
     setEditorState(EditorState.createWithContent(contentState))
-    // setEditorState(editorState)
-    // setValue(myContent)
   }
-  }
- 
-
-const toggleColor = (e:any) => {
-  e.preventDefault()
-  setEditorState(styles.color.toggle(editorState, e.target.value))
-}
-
-const alignCenter = (e:any) => {
-  e.preventDefault()
-  console.log("Hello align")
-  //  setEditorState(styles.textTransform.toggle(editorState, 'uppercase'))
-  // setEditorState(RichUtils.toggleInlineStyle(editorState, 'ALIGNCENTER'))
-   setEditorState(RichUtils.toggleBlockType(editorState, 'right'))
-}
-
-const lineHeight = (e:any) => {
-  e.preventDefault()
-  setEditorState(RichUtils.toggleBlockType(editorState, 'lheight'))
-}
-
-const letterSpace = (e:any) => {
-  e.preventDefault()
-  setEditorState(RichUtils.toggleBlockType(editorState, 'lspace'))
 }
 
 useEffect(() => {
@@ -156,20 +107,14 @@ useEffect(() => {
 
 }, [])
 
-const options = (x:any) => x.map((fontSize:any) => {
-  return <option key={fontSize} value={fontSize}>{fontSize}</option>;
-})
-
-
   return(
     <>
     <EditorContainer onClick={focusEditor}>
       <TextArea>
         <Editor
           customStyleFn={customStyleFn}
-          customStyleMap={customStyleMap}
           blockStyleFn={getBlockStyle}
-          placeholder={value}
+          placeholder='Type here...'
           ref={editor}
           editorState={editorState}
           onChange={onChange}
@@ -178,13 +123,6 @@ const options = (x:any) => x.map((fontSize:any) => {
       </TextArea>  
     </EditorContainer>
     <Toolbar onSaveClick={mySave} editorState={editorState} updateEditorState={setEditorState} styles={styles}/>
-    <button onClick={mySave}>Save</button>
-    <button onClick={alignCenter}>Align Center</button>
-    <button onClick={lineHeight}>Line Height</button>
-    <button onClick={letterSpace}>Letter Space</button>
-   {/* <select onChange={toggleColor}>
-            {options(['green', '#40be65', 'red', 'purple', 'orange'])}
-   </select> */}
   </>
   )
 }
